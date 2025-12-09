@@ -1,0 +1,7 @@
+{
+  "name": "PM Mock Interview ",
+  "description": "Interactive Product Management interview practice for RCA, Guesstimates, and more with an AI coach.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
