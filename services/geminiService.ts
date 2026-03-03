@@ -8,24 +8,51 @@ import {
 import { EvaluationResult, Category } from "../types";
 
 const getAI = () => {
-  const apiKey = process.env.GEMINI_API_KEY || '';
+  let apiKey = '';
+  let source = 'none';
+  
+  try {
+    // Priority 1: process.env (injected via Vite define or system env)
+    if (typeof process !== 'undefined' && process.env) {
+      apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
+      if (apiKey) source = 'process.env';
+    }
+  } catch (e) {}
+
+  // Priority 2: import.meta.env (Vite standard)
+  if (!apiKey && typeof import.meta !== 'undefined' && (import.meta as any).env) {
+    apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY || '';
+    if (apiKey) source = 'import.meta.env';
+  }
+
+  if (!apiKey) {
+    console.error("CRITICAL: No Gemini API key found. Sources checked: process.env, import.meta.env");
+    throw new Error('API_KEY_MISSING');
+  }
+  
+  console.log(`Gemini API initialized using key from ${source}`);
   return new GoogleGenAI({ apiKey });
 };
 
 export const createChatSession = (category: Category): Chat => {
-  let instruction = RCA_SYSTEM_INSTRUCTION;
-  if (category === 'Guesstimate') instruction = GUESSTIMATE_SYSTEM_INSTRUCTION;
-  if (category === 'Strategy') instruction = STRATEGY_SYSTEM_INSTRUCTION;
-  if (category === 'Product Design') instruction = PRODUCT_DESIGN_SYSTEM_INSTRUCTION;
-  
-  const ai = getAI();
-  return ai.chats.create({
-    model: 'gemini-3-flash-preview',
-    config: {
-      systemInstruction: instruction,
-      temperature: 0.7, 
-    },
-  });
+  try {
+    let instruction = RCA_SYSTEM_INSTRUCTION;
+    if (category === 'Guesstimate') instruction = GUESSTIMATE_SYSTEM_INSTRUCTION;
+    if (category === 'Strategy') instruction = STRATEGY_SYSTEM_INSTRUCTION;
+    if (category === 'Product Design') instruction = PRODUCT_DESIGN_SYSTEM_INSTRUCTION;
+    
+    const ai = getAI();
+    return ai.chats.create({
+      model: 'gemini-3-flash-preview',
+      config: {
+        systemInstruction: instruction,
+        temperature: 0.7, 
+      },
+    });
+  } catch (error) {
+    console.error("Error creating chat session:", error);
+    throw error;
+  }
 };
 
 export const startScenario = async (chat: Chat, scenarioTitle: string, category: Category): Promise<string> => {

@@ -123,9 +123,27 @@ const App: React.FC = () => {
           const audioData = await generateSpeech(initialResponse);
           if (audioData) playAudio(audioData);
       }
-    } catch (error) {
-      console.error(error);
-      setMessages([{ id: 'err', role: 'system', text: 'Failed to start session.' }]);
+    } catch (error: any) {
+      console.error("Session Start Error:", error);
+      let errorMessage = 'Failed to start session. Please try again later.';
+      
+      const errorStr = String(error?.message || error || '');
+      
+      if (errorStr.includes('API_KEY_INVALID')) {
+        errorMessage = 'Invalid API Key. Please check your environment variables.';
+      } else if (errorStr.includes('API_KEY_MISSING')) {
+        errorMessage = 'API Key is missing. Please ensure GEMINI_API_KEY is set in your environment.';
+      } else if (errorStr.includes('PERMISSION_DENIED')) {
+        errorMessage = 'Permission denied. Your API key might not have access to this model or region.';
+      } else if (errorStr.includes('QUOTA_EXHAUSTED')) {
+        errorMessage = 'API quota exhausted. Please try again in a few minutes.';
+      } else if (errorStr.includes('MODEL_NOT_FOUND')) {
+        errorMessage = 'The AI model is currently unavailable. Please try again later.';
+      } else {
+        errorMessage = `Failed to start session: ${errorStr.substring(0, 100)}${errorStr.length > 100 ? '...' : ''}`;
+      }
+      
+      setMessages([{ id: 'err', role: 'system', text: errorMessage }]);
     } finally {
       setIsThinking(false);
     }
