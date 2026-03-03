@@ -1,5 +1,5 @@
 
-import { Scenario, Category } from './types';
+import { Scenario } from './types';
 
 export const COACH_AVATAR_URL = "https://api.dicebear.com/9.x/avataaars/svg?seed=Felix&glasses=prescription02&clothing=blazerAndShirt&hair=shortFlat&skinColor=f8d25c&mouth=smile&eyebrows=default&eyes=default";
 

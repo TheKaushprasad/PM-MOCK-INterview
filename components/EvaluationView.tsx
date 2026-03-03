@@ -37,13 +37,13 @@ const EvaluationView: React.FC<EvaluationViewProps> = ({ result, onClose }) => {
   // Specific metrics based on category
   if (result.scores.mathAndReasoning !== undefined) {
       scoreCards.splice(1, 0, { label: 'Framework Application', val: result.scores.frameworkUsage, icon: '📐' }); // Assumptions
-      scoreCards.splice(2, 0, { label: 'Math & Reasoning', val: result.scores.mathAndReasoning, icon: '🧮' });
+      scoreCards.splice(2, 0, { label: 'Math & Reasoning', val: result.scores.mathAndReasoning as number, icon: '🧮' });
   } else if (result.scores.strategicInsight !== undefined) {
       scoreCards.splice(1, 0, { label: 'Framework Application', val: result.scores.frameworkUsage, icon: '📐' });
-      scoreCards.splice(2, 0, { label: 'Strategic Insight', val: result.scores.strategicInsight, icon: '♟️' });
+      scoreCards.splice(2, 0, { label: 'Strategic Insight', val: result.scores.strategicInsight as number, icon: '♟️' });
   } else if (result.scores.userUnderstanding !== undefined) {
-      scoreCards.splice(1, 0, { label: 'User Understanding', val: result.scores.userUnderstanding, icon: '👥' });
-      scoreCards.splice(2, 0, { label: 'Prioritization Clarity', val: result.scores.prioritizationClarity, icon: '⚖️' });
+      scoreCards.splice(1, 0, { label: 'User Understanding', val: result.scores.userUnderstanding as number, icon: '👥' });
+      scoreCards.splice(2, 0, { label: 'Prioritization Clarity', val: result.scores.prioritizationClarity as number, icon: '⚖️' });
   } else {
       // Default RCA
       scoreCards.splice(1, 0, { label: 'Framework Application', val: result.scores.frameworkUsage, icon: '📐' });

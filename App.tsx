@@ -46,9 +46,31 @@ const App: React.FC = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(true);
   
   // Shared Input State
   const [chatInputText, setChatInputText] = useState('');
+
+  useEffect(() => {
+    const checkApiKey = async () => {
+      const aistudio = (window as any).aistudio;
+      if (aistudio) {
+        const hasKey = await aistudio.hasSelectedApiKey();
+        setHasApiKey(hasKey || !!process.env.GEMINI_API_KEY || !!process.env.API_KEY);
+      } else {
+        setHasApiKey(!!process.env.GEMINI_API_KEY || !!process.env.API_KEY);
+      }
+    };
+    checkApiKey();
+  }, []);
+
+  const handleConnectKey = async () => {
+    const aistudio = (window as any).aistudio;
+    if (aistudio) {
+      await aistudio.openSelectKey();
+      setHasApiKey(true);
+    }
+  };
 
   // Refs
   const chatRef = useRef<Chat | null>(null);
@@ -226,7 +248,7 @@ const App: React.FC = () => {
     <div className="h-screen w-full flex flex-col md:flex-row bg-slate-100 overflow-hidden">
       {appState === 'landing' && (
         <div className="w-full h-full overflow-y-auto bg-white">
-          <LandingPage onStart={handleStartPractice} />
+          <LandingPage onStart={handleStartPractice} hasApiKey={hasApiKey} onConnectKey={handleConnectKey} />
         </div>
       )}
 

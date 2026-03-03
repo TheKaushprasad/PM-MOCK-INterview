@@ -172,7 +172,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-6 pt-20 pb-4 space-y-8 scrollbar-hide bg-slate-50/50">
-        {messages.map((msg, idx) => (
+        {messages.map((msg) => (
           <div
             key={msg.id}
             className={`flex w-full animate-fade-in-up ${

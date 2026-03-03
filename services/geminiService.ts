@@ -7,8 +7,13 @@ import {
 } from "../constants";
 import { EvaluationResult, Category } from "../types";
 
-const apiKey = process.env.API_KEY || '';
-const ai = new GoogleGenAI({ apiKey });
+const getAI = () => {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
+  if (!apiKey) {
+    console.error("Gemini API key is missing. Please ensure GEMINI_API_KEY or API_KEY is set.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 export const createChatSession = (category: Category): Chat => {
   let instruction = RCA_SYSTEM_INSTRUCTION;
@@ -16,8 +21,9 @@ export const createChatSession = (category: Category): Chat => {
   if (category === 'Strategy') instruction = STRATEGY_SYSTEM_INSTRUCTION;
   if (category === 'Product Design') instruction = PRODUCT_DESIGN_SYSTEM_INSTRUCTION;
   
+  const ai = getAI();
   return ai.chats.create({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     config: {
       systemInstruction: instruction,
       temperature: 0.7, 
@@ -92,6 +98,7 @@ export const sendMessageToCoach = async (chat: Chat, userMessage: string): Promi
 
 export const generateSpeech = async (text: string): Promise<string | undefined> => {
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text }] }],
@@ -122,7 +129,7 @@ export const getHintFromCoach = async (chat: Chat): Promise<string> => {
   }
 };
 
-export const endSessionAndEvaluate = async (chat: Chat, category: Category): Promise<EvaluationResult> => {
+export const endSessionAndEvaluate = async (_chat: Chat, category: Category): Promise<EvaluationResult> => {
   const evaluationSchema: Schema = {
     type: Type.OBJECT,
     properties: {
@@ -227,8 +234,10 @@ export const endSessionAndEvaluate = async (chat: Chat, category: Category): Pro
       Return the result strictly in JSON format matching the schema.
     `;
 
-    const response = await chat.sendMessage({
-      message: prompt,
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-pro-preview',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
         responseMimeType: "application/json",
         responseSchema: evaluationSchema
