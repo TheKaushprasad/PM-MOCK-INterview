@@ -46,19 +46,27 @@ const App: React.FC = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
-  const [hasApiKey, setHasApiKey] = useState(true);
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [isCheckingKey, setIsCheckingKey] = useState(true);
   
   // Shared Input State
   const [chatInputText, setChatInputText] = useState('');
 
   useEffect(() => {
     const checkApiKey = async () => {
-      const aistudio = (window as any).aistudio;
-      if (aistudio) {
-        const hasKey = await aistudio.hasSelectedApiKey();
-        setHasApiKey(hasKey || !!process.env.GEMINI_API_KEY || !!process.env.API_KEY);
-      } else {
+      try {
+        const aistudio = (window as any).aistudio;
+        if (aistudio) {
+          const hasKey = await aistudio.hasSelectedApiKey();
+          setHasApiKey(hasKey || !!process.env.GEMINI_API_KEY || !!process.env.API_KEY);
+        } else {
+          setHasApiKey(!!process.env.GEMINI_API_KEY || !!process.env.API_KEY);
+        }
+      } catch (e) {
+        console.error("Error checking API key:", e);
         setHasApiKey(!!process.env.GEMINI_API_KEY || !!process.env.API_KEY);
+      } finally {
+        setIsCheckingKey(false);
       }
     };
     checkApiKey();
@@ -67,8 +75,16 @@ const App: React.FC = () => {
   const handleConnectKey = async () => {
     const aistudio = (window as any).aistudio;
     if (aistudio) {
-      await aistudio.openSelectKey();
-      setHasApiKey(true);
+      try {
+        await aistudio.openSelectKey();
+        // After opening, we assume success or at least try to re-check
+        const hasKey = await aistudio.hasSelectedApiKey();
+        setHasApiKey(hasKey || !!process.env.GEMINI_API_KEY || !!process.env.API_KEY);
+      } catch (e) {
+        console.error("Error opening key selector:", e);
+      }
+    } else {
+      alert("API Key selection is only available within the AI Studio environment. Please ensure you have set GEMINI_API_KEY in your environment variables.");
     }
   };
 
@@ -248,7 +264,12 @@ const App: React.FC = () => {
     <div className="h-screen w-full flex flex-col md:flex-row bg-slate-100 overflow-hidden">
       {appState === 'landing' && (
         <div className="w-full h-full overflow-y-auto bg-white">
-          <LandingPage onStart={handleStartPractice} hasApiKey={hasApiKey} onConnectKey={handleConnectKey} />
+          <LandingPage 
+            onStart={handleStartPractice} 
+            hasApiKey={hasApiKey} 
+            onConnectKey={handleConnectKey}
+            isCheckingKey={isCheckingKey}
+          />
         </div>
       )}
 
