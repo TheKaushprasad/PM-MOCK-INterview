@@ -8,10 +8,7 @@ import {
 import { EvaluationResult, Category } from "../types";
 
 const getAI = () => {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
-  if (!apiKey) {
-    console.error("Gemini API key is missing. Please ensure GEMINI_API_KEY or API_KEY is set.");
-  }
+  const apiKey = process.env.GEMINI_API_KEY || '';
   return new GoogleGenAI({ apiKey });
 };
 

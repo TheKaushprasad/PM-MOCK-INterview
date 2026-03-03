@@ -3,12 +3,9 @@ import { COACH_AVATAR_URL } from '../constants';
 
 interface LandingPageProps {
   onStart: () => void;
-  hasApiKey: boolean;
-  onConnectKey: () => void;
-  isCheckingKey: boolean;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onStart, hasApiKey, onConnectKey, isCheckingKey }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
   const scrollToHowItWorks = () => {
     const element = document.getElementById('how-it-works');
     if (element) {
@@ -31,25 +28,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, hasApiKey, onConnect
         </div>
         
         <div className="flex items-center gap-4">
-          <button 
-            onClick={onConnectKey}
-            disabled={isCheckingKey}
-            className={`hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full border transition-all disabled:opacity-50 ${
-              hasApiKey 
-                ? 'text-slate-600 bg-white border-slate-200 hover:border-blue-200 hover:text-blue-600' 
-                : 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`w-4 h-4 ${isCheckingKey ? 'animate-spin' : ''}`}>
-              {isCheckingKey ? (
-                <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311L4.533 14.84a1 1 0 01-1.707-.707l.001-4.142a1 1 0 011-1l4.142.001a1 1 0 01.707 1.707l-1.266 1.266.311.311a3.5 3.5 0 005.855-1.57 1 1 0 111.77.718z" clipRule="evenodd" />
-              ) : (
-                <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
-              )}
-            </svg>
-            <span>{isCheckingKey ? 'Checking...' : (hasApiKey ? 'Change API Key' : 'Connect API Key')}</span>
-          </button>
-          
           <button 
             onClick={scrollToHowItWorks} 
             className="hidden sm:flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-full hover:border-blue-200 hover:text-blue-600 hover:shadow-md transition-all duration-300 group"
@@ -91,29 +69,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, hasApiKey, onConnect
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full animate-fade-in-up delay-300">
-          {isCheckingKey ? (
-            <div className="flex items-center gap-3 text-slate-400 font-medium">
-              <div className="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-              Checking API Key...
-            </div>
-          ) : !hasApiKey ? (
-            <button 
-              onClick={onConnectKey} 
-              className="w-full sm:w-auto px-10 py-4 bg-amber-500 text-white font-bold rounded-full hover:bg-amber-600 transition-all shadow-xl shadow-amber-500/20 hover:shadow-2xl hover:shadow-amber-500/30 transform hover:-translate-y-1 text-lg flex items-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
-              </svg>
-              Connect Gemini API Key
-            </button>
-          ) : (
-            <button 
-              onClick={onStart} 
-              className="w-full sm:w-auto px-10 py-4 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 hover:shadow-2xl hover:shadow-blue-500/30 transform hover:-translate-y-1 text-lg"
-            >
-              Start Practicing
-            </button>
-          )}
+          <button 
+            onClick={onStart} 
+            className="w-full sm:w-auto px-10 py-4 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 hover:shadow-2xl hover:shadow-blue-500/30 transform hover:-translate-y-1 text-lg"
+          >
+            Start Practicing
+          </button>
         </div>
 
         {/* Hero Visual */}
@@ -362,21 +323,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, hasApiKey, onConnect
               <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
                   Join hundreds of PMs practicing structured interview questions today. It's free, fun, and effective.
               </p>
-              {hasApiKey ? (
-                <button 
-                  onClick={onStart}
-                  className="bg-white text-blue-700 font-bold text-lg py-4 px-12 rounded-full hover:bg-blue-50 hover:scale-105 transition-all shadow-2xl shadow-blue-900/20"
-                >
-                    Start Practicing Now
-                </button>
-              ) : (
-                <button 
-                  onClick={onConnectKey}
-                  className="bg-amber-500 text-white font-bold text-lg py-4 px-12 rounded-full hover:bg-amber-600 hover:scale-105 transition-all shadow-2xl shadow-amber-900/20"
-                >
-                    Connect API Key to Start
-                </button>
-              )}
+              <button 
+                onClick={onStart}
+                className="bg-white text-blue-700 font-bold text-lg py-4 px-12 rounded-full hover:bg-blue-50 hover:scale-105 transition-all shadow-2xl shadow-blue-900/20"
+              >
+                  Start Practicing Now
+              </button>
               <div className="mt-8 flex justify-center gap-6 text-sm text-blue-200/80 font-medium">
                   <span className="flex items-center gap-2">✓ No Login Required</span>
                   <span className="flex items-center gap-2">✓ Instant Feedback</span>

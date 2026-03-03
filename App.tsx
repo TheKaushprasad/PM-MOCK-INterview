@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Scenario, Message, AppState, EvaluationResult } from './types';
 import LandingPage from './components/LandingPage';
 import ScenarioList from './components/ScenarioList';
@@ -46,47 +46,9 @@ const App: React.FC = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
-  const [hasApiKey, setHasApiKey] = useState(false);
-  const [isCheckingKey, setIsCheckingKey] = useState(true);
   
   // Shared Input State
   const [chatInputText, setChatInputText] = useState('');
-
-  useEffect(() => {
-    const checkApiKey = async () => {
-      try {
-        const aistudio = (window as any).aistudio;
-        if (aistudio) {
-          const hasKey = await aistudio.hasSelectedApiKey();
-          setHasApiKey(hasKey || !!process.env.GEMINI_API_KEY || !!process.env.API_KEY);
-        } else {
-          setHasApiKey(!!process.env.GEMINI_API_KEY || !!process.env.API_KEY);
-        }
-      } catch (e) {
-        console.error("Error checking API key:", e);
-        setHasApiKey(!!process.env.GEMINI_API_KEY || !!process.env.API_KEY);
-      } finally {
-        setIsCheckingKey(false);
-      }
-    };
-    checkApiKey();
-  }, []);
-
-  const handleConnectKey = async () => {
-    const aistudio = (window as any).aistudio;
-    if (aistudio) {
-      try {
-        await aistudio.openSelectKey();
-        // After opening, we assume success or at least try to re-check
-        const hasKey = await aistudio.hasSelectedApiKey();
-        setHasApiKey(hasKey || !!process.env.GEMINI_API_KEY || !!process.env.API_KEY);
-      } catch (e) {
-        console.error("Error opening key selector:", e);
-      }
-    } else {
-      alert("API Key selection is only available within the AI Studio environment. Please ensure you have set GEMINI_API_KEY in your environment variables.");
-    }
-  };
 
   // Refs
   const chatRef = useRef<Chat | null>(null);
@@ -266,9 +228,6 @@ const App: React.FC = () => {
         <div className="w-full h-full overflow-y-auto bg-white">
           <LandingPage 
             onStart={handleStartPractice} 
-            hasApiKey={hasApiKey} 
-            onConnectKey={handleConnectKey}
-            isCheckingKey={isCheckingKey}
           />
         </div>
       )}
