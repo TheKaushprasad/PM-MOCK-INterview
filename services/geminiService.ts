@@ -1,5 +1,4 @@
-
-import { GoogleGenAI, Chat, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Chat, Type, Schema, Modality } from "@google/genai";
 import { 
   RCA_SYSTEM_INSTRUCTION, 
   GUESSTIMATE_SYSTEM_INSTRUCTION, 
@@ -91,6 +90,27 @@ export const sendMessageToCoach = async (chat: Chat, userMessage: string): Promi
   }
 };
 
+export const generateSpeech = async (text: string): Promise<string | undefined> => {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-preview-tts",
+      contents: [{ parts: [{ text }] }],
+      config: {
+        responseModalities: [Modality.AUDIO],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: 'Fenrir' }, // Fenrir sounds authoritative and professional
+          },
+        },
+      },
+    });
+    return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+  } catch (error) {
+    console.error("TTS Error:", error);
+    return undefined;
+  }
+};
+
 export const getHintFromCoach = async (chat: Chat): Promise<string> => {
   try {
     const prompt = `[SYSTEM: The user is stuck and requested a HINT. Provide a short, directional nudge based on the current state of the interview and the specific framework. Do NOT give the answer.]`;
@@ -136,17 +156,75 @@ export const endSessionAndEvaluate = async (chat: Chat, category: Category): Pro
     required: ["rootCauseSummary", "reasoningSteps", "recommendedActions", "scores", "improvementSuggestions"]
   };
 
+  // Define Category-Specific Grading Criteria
+  let criteria = "";
+  if (category === 'RCA') {
+      criteria = `
+      - **Metric Definition (CRITICAL)**: Did they clarify what the metric implies before solving? (Score 1/5 if they skipped this).
+      - **Problem Structuring**: Did they use a specific framework (Internal/External, Funnel, Equation)? Random guessing = Max 2/5.
+      - **MECE**: Was the breakdown Mutually Exclusive, Collectively Exhaustive?
+      - **Hypothesis Validation**: Did they ask for data to validate hypotheses before jumping to conclusions?
+      - **Root Cause Accuracy**: Did they actually identify the correct root cause or just stop at a symptom?
+      `;
+  } else if (category === 'Product Design') {
+      criteria = `
+      - **Segmentation (CRITICAL)**: Did they narrow down to a *specific* persona? (Score 1-2/5 if "Everyone" or broad segments).
+      - **Problem Clarity**: Did they solve a real pain point or just build features?
+      - **Solution**: Is it unique/innovative or generic?
+      - **Metrics**: Did they define *specific* success metrics (e.g. Day-30 retention) vs vanity metrics (e.g. "Downloads")?
+      - **Trade-offs**: Did they discuss risks/cannibalization/ethics? (Missing trade-offs = Max 3/5).
+      `;
+  } else if (category === 'Guesstimate') {
+      criteria = `
+      - **Structure (CRITICAL)**: Did they define an equation/formula BEFORE plugging in numbers? (Score < 3 if they just guessed numbers).
+      - **Assumptions**: Are inputs based on proxies, facts, or logic? (e.g., "India pop ~1.4B" is good; "I guess 500k" is bad).
+      - **Math**: Precision isn't required, but order-of-magnitude correctness is.
+      - **Sanity Check**: Did they cross-check the final result against reality? (Missing sanity check = Max score 3/5).
+      - **Confidence**: Did they state the final number clearly?
+      `;
+  } else if (category === 'Strategy') {
+      criteria = `
+      - **Competitive Advantage**: Did they identify a real moat (Network effect, Switch cost, Data) or just "better UX"? (Generic = 1/5).
+      - **Market Dynamics**: Did they use frameworks like 5-Forces or 3Cs appropriately?
+      - **Decision**: Did they make a hard Go/No-Go choice? (Waffling = 2/5).
+      - **North Star**: Is the strategic goal aligned with long-term business value?
+      - **Risks**: Deep analysis of failure modes?
+      `;
+  } else if (category === 'Behavioral') {
+      criteria = `
+      - STAR Framework: Adherence to Situation, Task, Action, Result?
+      - Ownership: "I" vs "We" language?
+      - Results: Data-driven and quantified?
+      - Introspection: Depth of learning?
+      `;
+  }
+
   try {
     const prompt = `
-      [SYSTEM: The user has completed the session. 
-      1. Provide the Answer/Solution/Summary for the scenario.
-      2. Evaluate the user's performance BRUTALLY. Be extremely strict and critical.
-         - **Grading Standard**: 5/5 is reserved for perfect execution. 3/5 is average.
-         - **Deductions**: Penalize heavily for unstructured answers.
-         ${category === 'Guesstimate' ? '- **Focus**: Evaluate Assumptions Quality (use frameworkUsage field) and Math & Reasoning logic.' : ''}
-         ${category === 'Strategy' ? '- **Focus**: Evaluate Strategic Insight (deep understanding of trade-offs, market dynamics) and Business Acumen.' : ''}
-         ${category === 'Product Design' ? '- **Focus**: Evaluate User Understanding (empathy, persona depth) and Prioritization Clarity (logic for choosing features).' : ''}
-      3. Return the result strictly in JSON format matching the schema.]
+      ACT AS A BRUTALLY HONEST, HYPER-EXPERIENCED SENIOR PRODUCT MANAGER (10+ yrs, ex-FAANG).
+      You are evaluating a candidate's answer for a ${category} interview.
+      
+      **YOUR GOAL:** Destroy weak answers. Expose every flaw. Do not sugarcoat.
+      
+      **EVALUATION RULES:**
+      1. **Tone**: Cold, direct, professional, strictly fact-based. No "Good job" or "Nice try".
+      2. **Score Harshly (Scale 1-5)**:
+         - **1-2/5 (Fail/Weak)**: Unstructured, random brainstorming, missing definitions, no data usage.
+         - **3/5 (Average)**: Standard answer. Found a solution but lacked depth, segmentation rigor, or strategic insight.
+         - **4/5 (Strong)**: Clear structure, good data intuition, correct reasoning.
+         - **5/5 (Exceptional)**: Flawless MECE breakdown, excellent business sense, zero prompts needed. (Reserve for top 5% only).
+      
+      **CRITERIA FOR ${category}:**
+      ${criteria}
+
+      **OUTPUT INSTRUCTIONS (JSON):**
+      1. **rootCauseSummary**: The actual correct solution/summary of the case (or best approach).
+      2. **reasoningSteps**: "What a Strong Answer WOULD Have Done". The ideal path.
+      3. **improvementSuggestions**: "Brutal Feedback". Write 5-10 bullets of harsh critique. (e.g., "You failed to segment users.", "Your hypothesis was random.").
+      4. **scores**: Rate strictly based on the scale above.
+      5. **finalScore**: 0-100 based on overall impression (Aggragate of sub-scores).
+
+      Return the result strictly in JSON format matching the schema.
     `;
 
     const response = await chat.sendMessage({

@@ -10,6 +10,9 @@ interface ChatInterfaceProps {
   onSendMessage: (text: string) => void;
   onHint: () => void;
   onComplete: () => void;
+  isVoiceEnabled: boolean;
+  setIsVoiceEnabled: (enabled: boolean) => void;
+  onInitAudio: () => void;
 }
 
 // Add type definition for Web Speech API
@@ -28,6 +31,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage,
   onHint,
   onComplete,
+  isVoiceEnabled,
+  setIsVoiceEnabled,
+  onInitAudio
 }) => {
   const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -92,6 +98,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     recognition.start();
   };
 
+  const toggleVoiceOutput = () => {
+    if (!isVoiceEnabled) {
+        onInitAudio(); // Resume audio context on user gesture
+    }
+    setIsVoiceEnabled(!isVoiceEnabled);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputText.trim() && !isThinking) {
@@ -116,10 +129,29 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       
       {/* Top Bar - Glassmorphism */}
       <div className="absolute top-0 left-0 right-0 z-10 flex justify-between items-center px-6 py-4 bg-white/80 backdrop-blur-md border-b border-slate-100">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Live Coaching Session</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Live Coaching Session</span>
+          </div>
+          
+          {/* Voice Toggle */}
+          <button
+            onClick={toggleVoiceOutput}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
+                isVoiceEnabled 
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+            }`}
+          >
+             {isVoiceEnabled ? (
+                 <><span className="animate-pulse">🔊</span> Voice On</>
+             ) : (
+                 <><span>🔇</span> Voice Off</>
+             )}
+          </button>
         </div>
+
         <div className="flex gap-2">
           <button
             onClick={onHint}
